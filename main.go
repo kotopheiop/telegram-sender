@@ -136,7 +136,7 @@ func main() {
 		w.Write([]byte(requestDateTime))
 	})
 
-	log.Fatal(http.ListenAndServe("localhost:8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 	wg.Wait()
 }
 

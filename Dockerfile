@@ -16,4 +16,5 @@ RUN mkdir /app
 WORKDIR /app
 COPY --from=builder /app/telegram-sender /app/telegram-sender
 
+EXPOSE 8080
 CMD ["./telegram-sender"]
