@@ -7,6 +7,8 @@ services:
     ports:
       - "8095:8080"
     restart: unless-stopped
+    environment:
+      - BOT_TOKEN=your_bot_token # Пропишите здесь токен своего бота
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://localhost:8080/health", "||", "exit", "1" ]
       interval: 30s

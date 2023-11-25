@@ -16,15 +16,30 @@ Telegram-Sender - это учебный проект, реализованный
 git clone https://github.com/kotopheiop/telegram-sender.git
 ```
 
-Перед запуском в файл `.env` нужно прописать токен бота:
-```bash
-BOT_TOKEN = "<your_bot_token>"
+Перед запуском в файл `docker-compose.yml` нужно прописать токен бота:
+```yaml
+version: '3.3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8095:8080"
+    restart: unless-stopped
+    environment:
+      - BOT_TOKEN=your_bot_token # Пропишите здесь токен своего бота
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:8080/health", "||", "exit", "1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 ```
 
 ## Запуск проекта
 Проект запускается с помощью команды 
 ```bash
-docker-compose up
+docker-compose up --build
 ```
 
 ## Пример использования

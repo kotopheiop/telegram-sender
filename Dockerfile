@@ -14,7 +14,6 @@ RUN apk --no-cache add ca-certificates curl
 
 RUN mkdir /app
 WORKDIR /app
-COPY --from=builder /build/.env /app/.env
 COPY --from=builder /app/telegram-sender /app/telegram-sender
 
 CMD ["./telegram-sender"]

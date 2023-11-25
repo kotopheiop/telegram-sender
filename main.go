@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/joho/godotenv"
 )
 
 var wg sync.WaitGroup
@@ -56,11 +55,9 @@ func (q *MessageQueue) Dequeue() *Message {
 }
 
 func main() {
-	includeEnvFile() // Получим данные из .env
-
 	botToken := os.Getenv("BOT_TOKEN")
 	if botToken == "" {
-		log.Fatal("Токен бота не прописан в .env")
+		log.Fatal("Токен бота не прописан в environment")
 	}
 
 	color.Cyan("Сервис запустился на адресе localhost:8080")
@@ -142,12 +139,7 @@ func main() {
 	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 	wg.Wait()
 }
-func includeEnvFile() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
-}
+
 func parseRetryAfter(err error) (int, error) {
 	re := regexp.MustCompile(`retry after (\d+)`)
 	matches := re.FindStringSubmatch(err.Error())
