@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -11,12 +10,11 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
+	"telegramSender/telegramApi"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/joho/godotenv"
-	"github.com/mymmrac/telego"
-	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 var wg sync.WaitGroup
@@ -58,9 +56,6 @@ func (q *MessageQueue) Dequeue() *Message {
 }
 
 func main() {
-	port := flag.String("port", "8080", "port to listen on")
-	flag.Parse()
-
 	includeEnvFile() // Получим данные из .env
 
 	botToken := os.Getenv("BOT_TOKEN")
@@ -68,22 +63,14 @@ func main() {
 		log.Fatal("Токен бота не прописан в .env")
 	}
 
-	color.Cyan("Сервис запустился на адресе localhost:" + *port)
+	color.Cyan("Сервис запустился на адресе localhost:8080")
 
-	bot, err := telego.NewBot(os.Getenv("BOT_TOKEN"), telego.WithDefaultLogger(false, true))
+	bot, err := telegramApi.NewBot(botToken)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
-	// Получаем информацию о боте
-	botUser, err := bot.GetMe()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	color.Cyan("Запущен бот с ником: %s (@%s)\n", botUser.FirstName, botUser.Username)
+	color.Cyan("Запущен бот с ником: %s (@%s)\n", bot.FirstName, bot.Username)
 
 	messageQueue := &MessageQueue{}
 	ticker := time.NewTicker(time.Second / 30)
@@ -92,11 +79,12 @@ func main() {
 		for range ticker.C {
 			message = messageQueue.Dequeue()
 			if message != nil {
-				_, err = bot.SendMessage(&telego.SendMessageParams{
-					ChatID:          tu.ID(message.ChatID),
+				err = bot.SendMessage(telegramApi.SendMessageParams{
+					ChatID:          message.ChatID, // ID чата
 					Text:            message.Text,
-					MessageThreadID: *message.MessageThreadID,
+					MessageThreadID: message.MessageThreadID,
 				})
+
 				if err != nil {
 					color.Red("%s Ошибка отправки сообщения: %v", time.Now().Format(dateTimeFormat), err)
 					retryAfter, _ := parseRetryAfter(err)
@@ -151,7 +139,7 @@ func main() {
 		w.Write([]byte(requestDateTime))
 	})
 
-	log.Fatal(http.ListenAndServe(":"+*port, nil))
+	log.Fatal(http.ListenAndServe("localhost:8080", nil))
 	wg.Wait()
 }
 func includeEnvFile() {
@@ -161,7 +149,7 @@ func includeEnvFile() {
 	}
 }
 func parseRetryAfter(err error) (int, error) {
-	re := regexp.MustCompile(`retry after: (\d+)`)
+	re := regexp.MustCompile(`retry after (\d+)`)
 	matches := re.FindStringSubmatch(err.Error())
 	if len(matches) < 2 {
 		return 0, fmt.Errorf("no retry after in error message")
