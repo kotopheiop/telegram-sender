@@ -1,14 +1,16 @@
 version: '3.3'
 services:
-  app:
+  telegram-sender:
     build:
       context: .
       dockerfile: Dockerfile
+    image: kotopheiop/telegram-sender
+    container_name: <project-name>-telegram-sender # Вместо <project-name> укажите имя своего проекта
     ports:
       - "8095:8080"
     restart: unless-stopped
     environment:
-      - BOT_TOKEN=your_bot_token # Пропишите здесь токен своего бота
+      - BOT_TOKEN=<your_bot_token> # Укажите здесь токен своего бота
     healthcheck:
       test: [ "CMD", "curl", "--fail", "http://localhost:8080/health", "||", "exit", "1" ]
       interval: 30s
