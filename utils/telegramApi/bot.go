@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type Bot struct {
@@ -14,6 +15,7 @@ type Bot struct {
 	FirstName string `json:"first_name"`
 	Username  string `json:"username"`
 	token     string
+	client    *http.Client //будем переиспользовать клиент чтобы не создавать новый
 }
 
 type SendMessageParams struct {
@@ -23,6 +25,11 @@ type SendMessageParams struct {
 }
 
 func NewBot(botToken string) (*Bot, error) {
+
+	client := &http.Client{
+		Timeout: time.Second * 15,
+	}
+
 	resp, err := http.Get("https://api.telegram.org/bot" + botToken + "/getMe")
 	if err != nil {
 		return nil, err
@@ -48,6 +55,7 @@ func NewBot(botToken string) (*Bot, error) {
 	}
 
 	result.Result.token = botToken
+	result.Result.client = client
 
 	return &result.Result, nil
 }
@@ -58,7 +66,7 @@ func (b *Bot) SendMessage(params SendMessageParams) error {
 		return err
 	}
 
-	resp, err := http.Post("https://api.telegram.org/bot"+b.token+"/sendMessage", "application/json", bytes.NewBuffer(body))
+	resp, err := b.client.Post("https://api.telegram.org/bot"+b.token+"/sendMessage", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}

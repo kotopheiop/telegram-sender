@@ -10,15 +10,12 @@ import (
 	"runtime"
 	"strconv"
 	"sync"
-	"telegramSender/telegramApi"
+	"telegramSender/utils/logger"
+	"telegramSender/utils/telegramApi"
 	"time"
-
-	"github.com/fatih/color"
 )
 
 var wg sync.WaitGroup
-
-const dateTimeFormat = "2006-01-02 15:04:05"
 
 type Message struct {
 	ChatID          int64
@@ -57,17 +54,17 @@ func (q *MessageQueue) Dequeue() *Message {
 func main() {
 	botToken := os.Getenv("BOT_TOKEN")
 	if botToken == "" {
-		log.Fatal("Токен бота не прописан в environment")
+		logger.L.Fatal("Токен бота не прописан в environment")
 	}
 
-	color.Cyan("Сервис запустился на адресе localhost:8080")
+	logger.L.Info("Сервис запустился на адресе localhost:8080")
 
 	bot, err := telegramApi.NewBot(botToken)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	color.Cyan("Запущен бот с ником: %s (@%s)\n", bot.FirstName, bot.Username)
+	logger.L.Infof("Запущен бот с ником: %s (@%s)", bot.FirstName, bot.Username)
 
 	messageQueue := &MessageQueue{}
 	ticker := time.NewTicker(time.Second / 30)
@@ -83,17 +80,16 @@ func main() {
 				})
 
 				if err != nil {
-					color.Red("%s Ошибка отправки сообщения: %v", time.Now().Format(dateTimeFormat), err)
+					logger.L.Errorf("Ошибка отправки сообщения: %v", err)
 					retryAfter, _ := parseRetryAfter(err)
 					if retryAfter != 0 {
-						sleepTime := retryAfter + 1
-						color.HiGreen("%s Сервис прилёг отдохнуть на %d %s", time.Now().Format(dateTimeFormat),
-							sleepTime, pluralize(sleepTime, "секунда", "секунды", "секунд"))
-						time.Sleep(time.Duration(sleepTime) * time.Second)
+						logger.L.Warningf("Сервис прилёг отдохнуть на %d %s",
+							retryAfter, pluralize(retryAfter, "секунда", "секунды", "секунд"))
+						time.Sleep(time.Duration(retryAfter) * time.Second)
 						messageQueue.AddToTheBeginningEnqueue(*message) // Помещаем сообщение в начало очереди
 					}
 				} else {
-					color.Green("%s Сообщение успешно отправлено", time.Now().Format(dateTimeFormat))
+					logger.L.Info("Сообщение успешно отправлено")
 				}
 			}
 		}
@@ -101,11 +97,11 @@ func main() {
 
 	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
 
-		requestDateTine := time.Now().Format(dateTimeFormat)
+		requestDateTine := time.Now().Format(logger.DateTimeFormat)
 
 		chatId, err := strconv.ParseInt(r.Header.Get("ChatID"), 10, 64)
 		if err != nil {
-			color.Red("%s Ошибка чтения ChatID: %v", requestDateTine, err)
+			logger.L.Errorf("Ошибка чтения ChatID: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -113,7 +109,7 @@ func main() {
 
 		body, err := io.ReadAll(r.Body)
 		if err != nil || len(body) == 0 {
-			color.Red("%s Ошибка чтения тела запроса: %v", requestDateTine, err)
+			logger.L.Errorf("Ошибка чтения тела запроса: %v", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -130,13 +126,13 @@ func main() {
 
 	// Проверка работоспособности
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		requestDateTime := time.Now().Format(dateTimeFormat)
-		color.Green("%s Проверка работоспособности", requestDateTime)
+		requestDateTime := time.Now().Format(logger.DateTimeFormat)
+		logger.L.Info("Проверка работоспособности")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(requestDateTime))
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	logger.L.Fatal(http.ListenAndServe(":8080", nil))
 	wg.Wait()
 }
 
