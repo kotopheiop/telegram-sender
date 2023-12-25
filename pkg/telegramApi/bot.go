@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strconv"
 	"time"
 )
 
@@ -24,13 +26,14 @@ type SendMessageParams struct {
 	Text            string `json:"text"`
 }
 
-func NewBot(botToken string) (*Bot, error) {
+const telegramAPI = "https://api.telegram.org/bot"
 
+func InitBot(botToken string) (*Bot, error) {
 	client := &http.Client{
 		Timeout: time.Second * 15,
 	}
 
-	resp, err := http.Get("https://api.telegram.org/bot" + botToken + "/getMe")
+	resp, err := http.Get(telegramAPI + botToken + "/getMe")
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +69,7 @@ func (b *Bot) SendMessage(params SendMessageParams) error {
 		return err
 	}
 
-	resp, err := b.client.Post("https://api.telegram.org/bot"+b.token+"/sendMessage", "application/json", bytes.NewBuffer(body))
+	resp, err := b.client.Post(telegramAPI+b.token+"/sendMessage", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
@@ -92,4 +95,29 @@ func (b *Bot) SendMessage(params SendMessageParams) error {
 	}
 
 	return nil
+}
+
+func ParseRetryAfter(err error) (int, error) {
+	re := regexp.MustCompile(`retry after (\d+)`)
+	matches := re.FindStringSubmatch(err.Error())
+	retryAfter, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return 0, fmt.Errorf("failed to convert retry after to int: %w", err)
+	}
+	return retryAfter, nil
+}
+
+func Pluralize(n int, singular, plural1, plural2 string) string {
+	n = n % 100
+	if n > 10 && n < 20 {
+		return plural2
+	}
+	n = n % 10
+	if n == 1 {
+		return singular
+	}
+	if n > 1 && n < 5 {
+		return plural1
+	}
+	return plural2
 }
