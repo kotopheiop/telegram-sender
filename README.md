@@ -1,4 +1,4 @@
-# Telegram-Sender
+# Telegram Sender App
 
 ## Описание проекта
 Telegram-Sender - это учебный проект, реализованный в рамках изучения языка Go. Это сервис, который запускается в Docker и принимает POST-запросы для отправки сообщений в Telegram.
@@ -32,7 +32,7 @@ services:
     environment:
       - BOT_TOKEN=<your_bot_token> # Укажите здесь токен своего бота
     healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://localhost:8080/health", "||", "exit", "1" ]
+      test: [ "CMD", "curl", "--fail", "http://localhost:8080/api/health", "||", "exit", "1" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -45,7 +45,7 @@ docker-compose up --build
 ```
 
 ## Пример использования
-После запуска сервиса вы можете отправить POST-запрос на `http://localhost:port/send`, где `port` - это порт, на котором работает ваш сервис, по умолчанию в `docker-compose.yml` прописан 8095. 
+После запуска сервиса вы можете отправить POST-запрос на `http://localhost:port/api/send`, где `port` - это порт, на котором работает ваш сервис, по умолчанию в `docker-compose.yml` прописан 8095. 
 
 В заголовках запроса укажите `ChatId` и, если необходимо, `MessageThreadID`. В теле запроса укажите сообщение, которое вы хотите отправить.
 
@@ -168,7 +168,7 @@ docker-compose up --build
 </details>
 
 ## Проверка работоспособности сервиса
-Вы можете проверить работоспособность сервиса, отправив GET-запрос на `http://localhost:port/health`. В ответе вернётся текущая дата и время.
+Вы можете проверить работоспособность сервиса, отправив GET-запрос на `http://localhost:port/api/health`. В ответе вернётся текущая дата и время.
 
 ## Важно
 Убедитесь, что у вас установлен Docker и docker-compose перед запуском этого проекта.

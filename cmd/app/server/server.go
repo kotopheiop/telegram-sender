@@ -10,7 +10,7 @@ import (
 func StartServer(messageQueue *messageModule.Queue) {
 	app := fiber.New(fiber.Config{
 		ServerHeader: "Fiber",
-		AppName:      "app App v1.0.1",
+		AppName:      "Telegram Sender App v1.0.1",
 	})
 
 	apiRouter := app.Group("/api")
