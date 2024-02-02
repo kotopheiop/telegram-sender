@@ -12,7 +12,7 @@ services:
     environment:
       - BOT_TOKEN=<your_bot_token> # Укажите здесь токен своего бота
     healthcheck:
-      test: [ "CMD", "curl", "--fail", "http://localhost:8080/health", "||", "exit", "1" ]
+      test: [ "CMD", "curl", "--fail", "http://localhost:8080/api/health", "||", "exit", "1" ]
       interval: 30s
       timeout: 10s
       retries: 3

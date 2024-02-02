@@ -11,6 +11,11 @@ import (
 	"time"
 )
 
+type TelegramError struct {
+	Code        int
+	Description string
+}
+
 type Bot struct {
 	ID        int    `json:"id"`
 	IsBot     bool   `json:"is_bot"`
@@ -39,22 +44,33 @@ func InitBot(botToken string) (*Bot, error) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, &TelegramError{
+			Code:        resp.StatusCode,
+			Description: "не удалось получить информацию о боте",
+		}
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("не удалось прочитать тело ответа: %w", err)
 	}
 
 	var result struct {
 		Ok     bool `json:"ok"`
 		Result Bot  `json:"result"`
 	}
+
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("не удалось разобрать JSON: %w", err)
 	}
 
 	if !result.Ok {
-		return nil, fmt.Errorf("Не удалось получить информацию о боте")
+		return nil, &TelegramError{
+			Code:        resp.StatusCode,
+			Description: "не удалось получить информацию о боте",
+		}
 	}
 
 	result.Result.token = botToken
@@ -73,7 +89,6 @@ func (b *Bot) SendMessage(params SendMessageParams) error {
 	if err != nil {
 		return err
 	}
-
 	defer resp.Body.Close()
 
 	respBody, err := ioutil.ReadAll(resp.Body)
@@ -85,26 +100,33 @@ func (b *Bot) SendMessage(params SendMessageParams) error {
 		Ok          bool   `json:"ok"`
 		Description string `json:"description"`
 	}
+
 	err = json.Unmarshal(respBody, &result)
 	if err != nil {
 		return err
 	}
 
 	if !result.Ok {
-		return fmt.Errorf("Не удалось отправить сообщение: %s", result.Description)
+		return &TelegramError{
+			Code:        resp.StatusCode,
+			Description: result.Description,
+		}
 	}
 
 	return nil
 }
 
-func ParseRetryAfter(err error) (int, error) {
-	re := regexp.MustCompile(`retry after (\d+)`)
-	matches := re.FindStringSubmatch(err.Error())
-	retryAfter, err := strconv.Atoi(matches[1])
-	if err != nil {
-		return 0, fmt.Errorf("failed to convert retry after to int: %w", err)
+func ParseRetryAfter(err *TelegramError) (int, error) {
+	if err.Code == 429 {
+		matches := regexp.MustCompile(`retry after (\d+)`).FindStringSubmatch(err.Description)
+		retryAfter, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert retry after to int: %w", err)
+		}
+		return retryAfter, nil
 	}
-	return retryAfter, nil
+
+	return 0, nil
 }
 
 func Pluralize(n int, singular, plural1, plural2 string) string {
@@ -112,12 +134,19 @@ func Pluralize(n int, singular, plural1, plural2 string) string {
 	if n > 10 && n < 20 {
 		return plural2
 	}
+
 	n = n % 10
 	if n == 1 {
 		return singular
 	}
+
 	if n > 1 && n < 5 {
 		return plural1
 	}
+
 	return plural2
+}
+
+func (e *TelegramError) Error() string {
+	return fmt.Sprintf("API Telegram вернуло ошибку %d: %s", e.Code, e.Description)
 }

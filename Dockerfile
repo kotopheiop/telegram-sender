@@ -6,7 +6,7 @@ ADD go.sum .
 COPY . .
 
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/telegram-sender ./cmd/telegram-sender/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/app ./cmd/app/main.go
 
 FROM alpine:latest
 

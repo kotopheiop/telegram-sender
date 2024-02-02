@@ -25,7 +25,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: kotopheiop/telegram-sender
-    container_name: <project-name>-telegram-sender # Вместо <project-name> укажите имя своего проекта
+    container_name: <project-name>-app # Вместо <project-name> укажите имя своего проекта
     ports:
       - "8095:8080"
     restart: unless-stopped
@@ -56,7 +56,7 @@ docker-compose up --build
         $curl = curl_init();
 
         curl_setopt_array($curl, array(
-            CURLOPT_URL => 'localhost:8095/send',
+            CURLOPT_URL => 'localhost:8095/api/send',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -89,7 +89,7 @@ docker-compose up --build
             'Content-Type' => 'text/plain'
         ];
         $body = 'Тест';
-        $request = new Request('POST', 'localhost:8095/send', $headers, $body);
+        $request = new Request('POST', 'localhost:8095/api/send', $headers, $body);
         $res = $client->sendAsync($request)->wait();
         echo $res->getBody();
 ```
@@ -105,7 +105,7 @@ docker-compose up --build
             'method': 'POST',
             'hostname': 'localhost',
             'port': 8095,
-            'path': '/send',
+            'path': '/api/send',
             'headers': {
                 'ChatId': 'you-chat-id',
                 'MessageThreadID': 'message-thread-id',
@@ -148,7 +148,7 @@ docker-compose up --build
         let config = {
             method: 'post',
             maxBodyLength: Infinity,
-            url: 'localhost:8095/send',
+            url: 'localhost:8095/api/send',
             headers: {
                 'ChatId': 'you-chat-id',
                 'MessageThreadID': 'message-thread-id',
