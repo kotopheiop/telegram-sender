@@ -14,7 +14,7 @@ RUN apk --no-cache add ca-certificates curl
 
 RUN mkdir /app
 WORKDIR /app
-COPY --from=builder /app/telegram-sender /app/telegram-sender
+COPY --from=builder /app/app /app/telegram-sender
 
 EXPOSE 8080
 CMD ["./telegram-sender"]
